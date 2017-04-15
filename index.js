@@ -1,4 +1,5 @@
 const fs = require("fs");
+const Assert = require("assert");
 const AssumptionError = require("./AssumptionError");
 
 
@@ -31,5 +32,26 @@ function assumption(expr) {
     throw new AssumptionError(file, lineno, src);
 }
 
+function assumptionEqual(expr1, expr2) {
+    "use strict";
 
-module.exports = assumption;
+    try {
+        Assert.deepEqual(expr1, expr2);
+    } catch (e) {
+        const stack = myStackTrace();
+        const call = stack[1];
+        const file = call.getFileName();
+        const lineno = call.getLineNumber();
+        let src = fs.readFileSync(file, 'utf8');
+        const line = src.split('\n')[lineno - 1];
+        src = line.match(/assumptionEqual\((.*)\)/)[1];
+
+        throw new AssumptionError(file, lineno, src, `${JSON.stringify(expr1)} != ${JSON.stringify(expr2)}`);
+    }
+}
+
+
+module.exports = {
+    assumption,
+    assumptionEqual
+};
